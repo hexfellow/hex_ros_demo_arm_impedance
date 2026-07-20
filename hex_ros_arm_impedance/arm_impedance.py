@@ -65,12 +65,14 @@ class ArmImpedance:
         )
 
         ### control presets
-        self.__arm_stable_pos = np.asarray(
-            self.__impedance_param["arm_stable_pos"], dtype=np.float64)
-        arm_stable_pose = self.__dyn_util.forward_kinematics(
-            self.__arm_stable_pos)[-1]
-        self.__arm_stable_se3 = part2se3(arm_stable_pose[0],
-                                         arm_stable_pose[1])
+        self.__arm_start_pos = np.asarray(
+            self.__impedance_param["arm_start_pos"], dtype=np.float64)
+        self.__arm_end_pos = np.asarray(
+            self.__impedance_param["arm_end_pos"], dtype=np.float64)
+        arm_start_pose = self.__dyn_util.forward_kinematics(
+            self.__arm_start_pos)[-1]
+        self.__arm_start_se3 = part2se3(arm_start_pose[0],
+                                         arm_start_pose[1])
         self.__arm_pos_threshold = self.__impedance_param["arm_pos_threshold"]
         self.__grip_stable_pos = np.asarray(
             self.__impedance_param["grip_stable_pos"], dtype=np.float64)
@@ -138,7 +140,7 @@ class ArmImpedance:
             orientation=HexDcBaseQuaternion(x=0.0, y=0.0, z=0.0, w=1.0),
         )
 
-    def __build_stable_ctrl(self) -> HexDcRoboManipCtrl:
+    def __build_stable_ctrl(self, is_start: bool=True) -> HexDcRoboManipCtrl:
         arm_ctrl = HexDcRoboArmCtrl(
             ctrl_mode=HexDcRoboArmCtrlMode.JNT,
             grav=HexDcBaseVector3(
@@ -147,7 +149,7 @@ class ArmImpedance:
                 z=float(self.__gravity[2]),
             ),
             jnt=HexDcBaseJntFull(
-                pos=self.__arm_stable_pos.copy(),
+                pos=self.__arm_start_pos.copy() if is_start else self.__arm_end_pos.copy(),
                 vel=np.zeros(ARM_DOF),
                 eff=np.zeros(ARM_DOF),
                 kp=self.__arm_kp.copy(),
@@ -184,7 +186,7 @@ class ArmImpedance:
             ),
             jnt=HexDcBaseJntFull(
                 pos=arm_jnt_pos
-                if arm_jnt_pos is not None else self.__arm_stable_pos.copy(),
+                if arm_jnt_pos is not None else self.__arm_start_pos.copy(),
                 vel=np.zeros(ARM_DOF),
                 eff=np.zeros(ARM_DOF),
                 kp=self.__arm_impedance_kp.copy(),
@@ -227,10 +229,11 @@ class ArmImpedance:
                 self.__stop_event.set()
             prev_q = curr_q
 
-    def __move_to_stable(self, phase: str):
+    def __move_to_stable(self, phase: str, is_start: bool=True):
         self.__data_interface.logi(
             f"[arm_impedance]: move to {phase} position")
-        stable_ctrl = self.__build_stable_ctrl()
+        stable_ctrl = self.__build_stable_ctrl(is_start)
+        stable_pos = self.__arm_start_pos if is_start else self.__arm_end_pos
         while self.__data_interface.ok():
             state = self.__data_interface.get_manip_state(latest=True)
             if state is not None:
@@ -238,8 +241,8 @@ class ArmImpedance:
                     state.manip_state.arm_state.jnt.position,
                     dtype=np.float64,
                 )
-                if jnt_pos.shape == self.__arm_stable_pos.shape:
-                    err = self.__arm_stable_pos - jnt_pos
+                if jnt_pos.shape == stable_pos.shape:
+                    err = stable_pos - jnt_pos
                     if np.fabs(err).max() < self.__arrive_threshold:
                         break
                 self.__data_interface.pub_manip_ctrl(stable_ctrl)
@@ -247,13 +250,13 @@ class ArmImpedance:
 
     def __init_process(self):
         try:
-            self.__move_to_stable("init")
+            self.__move_to_stable("init", is_start=True)
         except Exception:
             traceback.print_exc()
 
     def __exit_process(self):
         try:
-            self.__move_to_stable("exit")
+            self.__move_to_stable("exit", is_start=False)
         except Exception:
             traceback.print_exc()
 
@@ -275,7 +278,7 @@ class ArmImpedance:
                         state.manip_state.arm_state.pose.orientation.z
                     ]),
                 )
-                se3_err = self.__arm_stable_se3 - se3_end_in_base
+                se3_err = self.__arm_start_se3 - se3_end_in_base
                 max_err = np.max(np.abs(se3_err[:3]))
                 ratio = 1.0 if max_err < self.__arm_pos_threshold else self.__arm_pos_threshold / max_err
                 se3_err[:3] = se3_err[:3] * ratio
