@@ -73,9 +73,13 @@ class DataInterface(InterfaceBase):
         self._impedance_param = {
             "gravity":
             list(rospy.get_param('~gravity', [0.0, 0.0, -9.81])),
-            "arm_stable_pos":
+            "arm_start_pos":
             list(
-                rospy.get_param('~arm_stable_pos',
+                rospy.get_param('~arm_start_pos',
+                                [0.0, -1.5, 3.0, 0.07, 0.0, 0.0])),
+            "arm_end_pos":
+            list(
+                rospy.get_param('~arm_end_pos',
                                 [0.0, -1.5, 3.0, 0.07, 0.0, 0.0])),
             "grip_stable_pos":
             list(rospy.get_param('~grip_stable_pos', [0.5])),
@@ -97,8 +101,8 @@ class DataInterface(InterfaceBase):
             list(
                 rospy.get_param('~arm_impedance_kd',
                                 [2.5, 2.5, 2.5, 2.5, 1.0, 1.0])),
-            "arm_se3_threshold":
-            rospy.get_param('~arm_se3_threshold', 0.1),
+            "arm_pos_threshold":
+            rospy.get_param('~arm_pos_threshold', 0.1),
             "grip_impedance_kp":
             list(rospy.get_param('~grip_impedance_kp', [10.0])),
             "grip_impedance_kd":

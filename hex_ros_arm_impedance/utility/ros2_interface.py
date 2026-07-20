@@ -69,7 +69,9 @@ class DataInterface(InterfaceBase):
             [0.187, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
         )
         self.__node.declare_parameter('gravity', [0.0, 0.0, -9.81])
-        self.__node.declare_parameter('arm_stable_pos',
+        self.__node.declare_parameter('arm_start_pos',
+                                      [0.0, -1.5, 3.0, 0.07, 0.0, 0.0])
+        self.__node.declare_parameter('arm_end_pos',
                                       [0.0, -1.5, 3.0, 0.07, 0.0, 0.0])
         self.__node.declare_parameter('grip_stable_pos', [0.5])
         self.__node.declare_parameter('arm_kp',
@@ -101,8 +103,10 @@ class DataInterface(InterfaceBase):
         self._impedance_param = {
             "gravity":
             list(self.__node.get_parameter('gravity').value),
-            "arm_stable_pos":
-            list(self.__node.get_parameter('arm_stable_pos').value),
+            "arm_start_pos":
+            list(self.__node.get_parameter('arm_start_pos').value),
+            "arm_end_pos":
+            list(self.__node.get_parameter('arm_end_pos').value),
             "grip_stable_pos":
             list(self.__node.get_parameter('grip_stable_pos').value),
             "arm_kp":

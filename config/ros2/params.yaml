@@ -16,7 +16,8 @@ arm_impedance:
     gravity: [0.0, 0.0, -9.81]
 
     # stable (init / exit) joint position
-    arm_stable_pos: [0.0, -1.5, 3.0, 0.07, 0.0, 0.0]
+    arm_start_pos: [0.0, -1.2, 2.5, 0.37, 0.0, 0.0]
+    arm_end_pos: [0.0, -1.5, 3.0, 0.07, 0.0, 0.0]
     grip_stable_pos: [0.5]
 
     # gains used while moving to the stable position
