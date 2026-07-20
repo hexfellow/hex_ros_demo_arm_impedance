@@ -13,6 +13,7 @@ import traceback
 import threading
 
 import numpy as np
+from hex_util_ros import part2se3, se32part
 
 scrpit_path = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(scrpit_path)
@@ -37,25 +38,23 @@ ARM_DOF = 6
 GRIP_DOF = 1
 
 
-class ArmComp:
+class ArmImpedance:
 
     def __init__(self):
         ### utility
-        self.__data_interface = DataInterface("arm_comp")
+        self.__data_interface = DataInterface("arm_impedance")
 
         ### parameters
         self.__rate_param = self.__data_interface.get_rate_param()
         self.__model_param = self.__data_interface.get_model_param()
-        self.__comp_param = self.__data_interface.get_comp_param()
+        self.__impedance_param = self.__data_interface.get_impedance_param()
         self.__data_interface.logi(f"work rate: {self.__rate_param['ros']} hz")
         self.__data_interface.logi(
             f"teleop rate: {self.__rate_param['teleop']} hz")
         self.__data_interface.logi(f"model urdf: {self.__model_param['urdf']}")
-        self.__data_interface.logi(
-            f"extra mass: {self.__comp_param['extra_mass']} kg")
 
         ### dynamics
-        self.__gravity = np.asarray(self.__comp_param["gravity"],
+        self.__gravity = np.asarray(self.__impedance_param["gravity"],
                                     dtype=np.float64)
         self.__dyn_util = HexDynUtilY6(
             model_path=self.__model_param["urdf"],
@@ -64,24 +63,34 @@ class ArmComp:
                 self.__model_param["pose_end_in_flange"], dtype=np.float64),
             gravity=self.__gravity,
         )
-        # upward force compensating the weight of the extra end-effector mass
-        self.__extra_force = -self.__dyn_util.get_gravity(
-        ) * self.__comp_param["extra_mass"]
 
         ### control presets
-        self.__arm_stable_pos = np.asarray(self.__comp_param["arm_stable_pos"],
-                                           dtype=np.float64)
+        self.__arm_stable_pos = np.asarray(
+            self.__impedance_param["arm_stable_pos"], dtype=np.float64)
+        arm_stable_pose = self.__dyn_util.forward_kinematics(
+            self.__arm_stable_pos)[-1]
+        self.__arm_stable_se3 = part2se3(arm_stable_pose[0],
+                                         arm_stable_pose[1])
+        self.__arm_pos_threshold = self.__impedance_param["arm_pos_threshold"]
         self.__grip_stable_pos = np.asarray(
-            self.__comp_param["grip_stable_pos"], dtype=np.float64)
-        self.__arm_kp = np.asarray(self.__comp_param["arm_kp"],
+            self.__impedance_param["grip_stable_pos"], dtype=np.float64)
+        self.__arm_kp = np.asarray(self.__impedance_param["arm_kp"],
                                    dtype=np.float64)
-        self.__arm_kd = np.asarray(self.__comp_param["arm_kd"],
+        self.__arm_kd = np.asarray(self.__impedance_param["arm_kd"],
                                    dtype=np.float64)
-        self.__grip_kp = np.asarray(self.__comp_param["grip_kp"],
+        self.__grip_kp = np.asarray(self.__impedance_param["grip_kp"],
                                     dtype=np.float64)
-        self.__grip_kd = np.asarray(self.__comp_param["grip_kd"],
+        self.__grip_kd = np.asarray(self.__impedance_param["grip_kd"],
                                     dtype=np.float64)
-        self.__arrive_threshold = self.__comp_param["arrive_threshold"]
+        self.__arm_impedance_kp = np.asarray(
+            self.__impedance_param["arm_impedance_kp"], dtype=np.float64)
+        self.__arm_impedance_kd = np.asarray(
+            self.__impedance_param["arm_impedance_kd"], dtype=np.float64)
+        self.__grip_impedance_kp = np.asarray(
+            self.__impedance_param["grip_impedance_kp"], dtype=np.float64)
+        self.__grip_impedance_kd = np.asarray(
+            self.__impedance_param["grip_impedance_kd"], dtype=np.float64)
+        self.__arrive_threshold = self.__impedance_param["arrive_threshold"]
 
         ### threads
         self.__stop_event = threading.Event()
@@ -162,10 +171,10 @@ class ArmComp:
         )
         return HexDcRoboManipCtrl(arm_ctrl=arm_ctrl, grip_ctrl=grip_ctrl)
 
-    def __build_comp_ctrl(self, extra_tau: np.ndarray) -> HexDcRoboManipCtrl:
-        # MIT mode with zero gains: the driver/sim adds the model gravity +
-        # coriolis compensation (via `grav`), so the only commanded effort is
-        # the torque that holds the extra end-effector payload.
+    def __build_impedance_ctrl(
+            self,
+            arm_jnt_pos: np.ndarray = None,
+            grip_jnt_pos: np.ndarray = None) -> HexDcRoboManipCtrl:
         arm_ctrl = HexDcRoboArmCtrl(
             ctrl_mode=HexDcRoboArmCtrlMode.MIT,
             grav=HexDcBaseVector3(
@@ -174,11 +183,12 @@ class ArmComp:
                 z=float(self.__gravity[2]),
             ),
             jnt=HexDcBaseJntFull(
-                pos=np.zeros(ARM_DOF),
+                pos=arm_jnt_pos
+                if arm_jnt_pos is not None else self.__arm_stable_pos.copy(),
                 vel=np.zeros(ARM_DOF),
-                eff=np.asarray(extra_tau, dtype=np.float64),
-                kp=np.zeros(ARM_DOF),
-                kd=np.zeros(ARM_DOF),
+                eff=np.zeros(ARM_DOF),
+                kp=self.__arm_impedance_kp.copy(),
+                kd=self.__arm_impedance_kd.copy(),
                 lim_vel=np.zeros(ARM_DOF),
                 lim_acc=np.zeros(ARM_DOF),
             ),
@@ -187,11 +197,12 @@ class ArmComp:
         grip_ctrl = HexDcRoboGripCtrl(
             ctrl_mode=HexDcRoboGripCtrlMode.MIT,
             jnt=HexDcBaseJntFull(
-                pos=np.zeros(GRIP_DOF),
+                pos=grip_jnt_pos
+                if grip_jnt_pos is not None else self.__grip_stable_pos.copy(),
                 vel=np.zeros(GRIP_DOF),
                 eff=np.zeros(GRIP_DOF),
-                kp=np.zeros(GRIP_DOF),
-                kd=np.zeros(GRIP_DOF),
+                kp=self.__grip_impedance_kp.copy(),
+                kd=self.__grip_impedance_kd.copy(),
                 lim_vel=np.zeros(GRIP_DOF),
                 lim_acc=np.zeros(GRIP_DOF),
             ),
@@ -212,12 +223,13 @@ class ArmComp:
 
             curr_q = bool(keys.key_q)
             if curr_q and not prev_q:
-                self.__data_interface.logi("[arm_comp]: stop and exit")
+                self.__data_interface.logi("[arm_impedance]: stop and exit")
                 self.__stop_event.set()
             prev_q = curr_q
 
     def __move_to_stable(self, phase: str):
-        self.__data_interface.logi(f"[arm_comp]: move to {phase} position")
+        self.__data_interface.logi(
+            f"[arm_impedance]: move to {phase} position")
         stable_ctrl = self.__build_stable_ctrl()
         while self.__data_interface.ok():
             state = self.__data_interface.get_manip_state(latest=True)
@@ -246,29 +258,45 @@ class ArmComp:
             traceback.print_exc()
 
     def __work_process(self):
-        self.__data_interface.logi("[arm_comp]: start gravity compensation")
+        self.__data_interface.logi("[arm_impedance]: start impedance control")
         while self.__is_running():
             state = self.__data_interface.get_manip_state(latest=True)
             if state is not None:
-                q = np.asarray(state.manip_state.arm_state.jnt.position,
-                               dtype=np.float64)
-                dq = np.asarray(state.manip_state.arm_state.jnt.velocity,
-                                dtype=np.float64)
-                if q.shape[0] == ARM_DOF and dq.shape[0] == ARM_DOF:
-                    # translation Jacobian (base frame) maps force -> joint tau
-                    jac = self.__dyn_util.dynamic_params(
-                        q, dq, base_frame=True)[3][:3, :ARM_DOF]
-                    extra_tau = jac.T @ self.__extra_force
-                    self.__data_interface.pub_manip_ctrl(
-                        self.__build_comp_ctrl(extra_tau))
+                se3_end_in_base = part2se3(
+                    np.array([
+                        state.manip_state.arm_state.pose.position.x,
+                        state.manip_state.arm_state.pose.position.y,
+                        state.manip_state.arm_state.pose.position.z
+                    ]),
+                    np.array([
+                        state.manip_state.arm_state.pose.orientation.w,
+                        state.manip_state.arm_state.pose.orientation.x,
+                        state.manip_state.arm_state.pose.orientation.y,
+                        state.manip_state.arm_state.pose.orientation.z
+                    ]),
+                )
+                se3_err = self.__arm_stable_se3 - se3_end_in_base
+                max_err = np.max(np.abs(se3_err[:3]))
+                ratio = 1.0 if max_err < self.__arm_pos_threshold else self.__arm_pos_threshold / max_err
+                se3_err[:3] = se3_err[:3] * ratio
+                tar_se3 = se3_end_in_base + se3_err
+
+                tar_pose = se32part(tar_se3)
+                ik_success, tar_jnt_pos = self.__dyn_util.inverse_kinematics_analytic(
+                    tar_pose, state.manip_state.arm_state.jnt.position)
+                if not ik_success:
+                    tar_jnt_pos = state.manip_state.arm_state.jnt.position
+                    print(f"[arm_impedance]: inverse kinematics failed")
+                self.__data_interface.pub_manip_ctrl(
+                    self.__build_impedance_ctrl(tar_jnt_pos))
             self.__data_interface.sleep()
 
 
 def main():
-    arm_comp = ArmComp()
+    arm_impedance = ArmImpedance()
     try:
-        arm_comp.start()
-        arm_comp.run()
+        arm_impedance.start()
+        arm_impedance.run()
     except KeyboardInterrupt:
         pass
 

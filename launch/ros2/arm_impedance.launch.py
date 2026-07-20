@@ -14,23 +14,23 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    comp_pkg_path = FindPackageShare('hex_ros_arm_comp')
+    impedance_pkg_path = FindPackageShare('hex_ros_arm_impedance')
     urdf_pkg_path = FindPackageShare('hex_ros_urdf_archer_y6')
 
-    # arm_comp node
-    comp_param_path = PathJoinSubstitution(
-        [comp_pkg_path, "config", "ros2", "params.yaml"])
+    # arm_impedance node
+    impedance_param_path = PathJoinSubstitution(
+        [impedance_pkg_path, "config", "ros2", "params.yaml"])
     urdf_file_path = PathJoinSubstitution(
         [urdf_pkg_path, "urdf", "gr100_comp.urdf"])
 
-    arm_comp_node = Node(
-        package='hex_ros_arm_comp',
-        executable='arm_comp',
-        name='arm_comp',
+    arm_impedance_node = Node(
+        package='hex_ros_arm_impedance',
+        executable='arm_impedance',
+        name='arm_impedance',
         output="screen",
         emulate_tty=True,
         parameters=[
-            comp_param_path,
+            impedance_param_path,
             {
                 "model_urdf": ParameterValue(urdf_file_path, value_type=str),
                 "use_sim_time": True,
@@ -44,5 +44,5 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        arm_comp_node,
+        arm_impedance_node,
     ])

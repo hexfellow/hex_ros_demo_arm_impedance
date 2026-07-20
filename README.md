@@ -1,18 +1,16 @@
-# hex_ros_arm_comp
+# hex_ros_arm_impedance
 
 ## What does this package do
 
-This package is a **gravity compensation demo** for the Archer Y6 arm that works in **both ROS 1 and ROS 2**.
+This package is an **impedance control demo** for the Archer Y6 arm that works in **both ROS 1 and ROS 2**.
 
-The node first drives the arm to a stable start pose, then switches into gravity compensation: at every control cycle it reads the latest arm state, computes the joint torques needed to hold a virtual extra end-effector payload, and publishes a `MIT` control command with zero stiffness/damping. The robot driver (or the [`hex_ros_sim_archer_y6`](../hex_ros_sim_archer_y6) simulator) adds the model gravity/coriolis compensation, so the arm "floats" and can be moved by hand.
+The node first drives the arm to a stable start pose, then switches into impedance control: at every control cycle it reads the latest arm state, limits the SE(3) pose error toward the stable pose, solves analytic IK for a target joint position, and publishes a `MIT` control command with impedance stiffness/damping. The robot driver (or the [`hex_ros_sim_archer_y6`](../hex_ros_sim_archer_y6) simulator) adds the model gravity/coriolis compensation, so the arm compliantly returns toward the stable pose when disturbed.
 
 A keyboard interface (see [`hex_ros_teleop_keyboard`](../hex_ros_teleop_keyboard)) is used for runtime control:
 
 * press **`q`** to stop the demo and move the arm back to the stable pose.
 
 Data recording is left to ROS's built-in bag tools (`ros2 bag record` / `rosbag record`).
-
-This demo is the ROS port of the `hex_flow_comp_archer_y6` node-flow demo.
 
 ## Maintainer
 
@@ -54,20 +52,22 @@ Ensure the following software is installed:
 
 ### Parameters
 
-| Name                 | Data Type        | Description                                            |
-| -------------------- | ---------------- | ----------------------------------------------------- |
-| `rate_ros`           | `double`         | Gravity compensation work loop rate [hz].             |
-| `rate_teleop`        | `double`         | Keyboard monitor rate [hz].                           |
-| `model_urdf`         | `string`         | Path to the URDF used for the dynamics model.         |
-| `model_frame_id`     | `string`         | Frame id of the robot base.                           |
-| `pose_end_in_flange` | `vector<double>` | End-effector pose in flange `[x,y,z,qw,qx,qy,qz]`.    |
-| `gravity`            | `vector<double>` | Gravity vector `[x,y,z]` [m/s^2].                     |
-| `arm_stable_pos`     | `vector<double>` | Arm joint stable (init/exit) position [rad].          |
-| `grip_stable_pos`    | `vector<double>` | Gripper stable position.                              |
-| `arm_kp` / `arm_kd`  | `vector<double>` | Arm gains used while moving to the stable position.   |
-| `grip_kp` / `grip_kd`| `vector<double>` | Gripper gains used while moving to the stable position.|
-| `arrive_threshold`   | `double`         | Max joint error [rad] to consider the pose reached.   |
-| `extra_mass`         | `double`         | Extra end-effector payload mass to compensate [kg].   |
+| Name                          | Data Type        | Description                                              |
+| ----------------------------- | ---------------- | -------------------------------------------------------- |
+| `rate_ros`                    | `double`         | Impedance control work loop rate [hz].                  |
+| `rate_teleop`                 | `double`         | Keyboard monitor rate [hz].                             |
+| `model_urdf`                  | `string`         | Path to the URDF used for the dynamics model.           |
+| `model_frame_id`              | `string`         | Frame id of the robot base.                             |
+| `pose_end_in_flange`          | `vector<double>` | End-effector pose in flange `[x,y,z,qw,qx,qy,qz]`.      |
+| `gravity`                     | `vector<double>` | Gravity vector `[x,y,z]` [m/s^2].                       |
+| `arm_stable_pos`              | `vector<double>` | Arm joint stable (init/exit) position [rad].            |
+| `grip_stable_pos`             | `vector<double>` | Gripper stable position.                                |
+| `arm_kp` / `arm_kd`           | `vector<double>` | Arm gains used while moving to the stable position.     |
+| `grip_kp` / `grip_kd`         | `vector<double>` | Gripper gains used while moving to the stable position. |
+| `arm_impedance_kp` / `kd`     | `vector<double>` | Arm gains used during impedance control.                |
+| `grip_impedance_kp` / `kd`    | `vector<double>` | Gripper gains used during impedance control.            |
+| `arm_se3_threshold`           | `double`         | Max SE(3) error step applied per cycle.                 |
+| `arrive_threshold`            | `double`         | Max joint error [rad] to consider the pose reached.     |
 
 ## Getting Started
 
@@ -88,7 +88,7 @@ Ensure the following software is installed:
 3. Clone the repository:
 
    ```shell
-   git clone https://github.com/hexfellow/hex_ros_arm_comp.git
+   git clone https://github.com/hexfellow/hex_ros_arm_impedance.git
    ```
 
 4. Navigate back and build the workspace:
@@ -132,18 +132,18 @@ Ensure the following software is installed:
    ros2 launch hex_ros_teleop_keyboard teleop_keyboard.launch.py
    ```
 
-2. Launch the `arm_comp` node:
+2. Launch the `arm_impedance` node:
 
    For ROS 1:
 
    ```shell
-   roslaunch hex_ros_arm_comp arm_comp.launch
+   roslaunch hex_ros_arm_impedance arm_impedance.launch
    ```
 
    For ROS 2:
 
    ```shell
-   ros2 launch hex_ros_arm_comp arm_comp.launch.py
+   ros2 launch hex_ros_arm_impedance arm_impedance.launch.py
    ```
 
-3. The arm moves to the stable pose and then enters gravity compensation. Press `q` to exit. To record data, use ROS's bag tools, e.g. `ros2 bag record -a`.
+3. The arm moves to the stable pose and then enters impedance control. Press `q` to exit. To record data, use ROS's bag tools, e.g. `ros2 bag record -a`.

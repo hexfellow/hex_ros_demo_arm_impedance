@@ -70,7 +70,7 @@ class DataInterface(InterfaceBase):
                 rospy.get_param('~pose_end_in_flange',
                                 [0.187, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0])),
         }
-        self._comp_param = {
+        self._impedance_param = {
             "gravity":
             list(rospy.get_param('~gravity', [0.0, 0.0, -9.81])),
             "arm_stable_pos":
@@ -89,10 +89,22 @@ class DataInterface(InterfaceBase):
             list(rospy.get_param('~grip_kp', [10.0])),
             "grip_kd":
             list(rospy.get_param('~grip_kd', [0.5])),
+            "arm_impedance_kp":
+            list(
+                rospy.get_param('~arm_impedance_kp',
+                                [100.0, 100.0, 125.0, 75.0, 50.0, 50.0])),
+            "arm_impedance_kd":
+            list(
+                rospy.get_param('~arm_impedance_kd',
+                                [2.5, 2.5, 2.5, 2.5, 1.0, 1.0])),
+            "arm_se3_threshold":
+            rospy.get_param('~arm_se3_threshold', 0.1),
+            "grip_impedance_kp":
+            list(rospy.get_param('~grip_impedance_kp', [10.0])),
+            "grip_impedance_kd":
+            list(rospy.get_param('~grip_impedance_kd', [0.5])),
             "arrive_threshold":
             rospy.get_param('~arrive_threshold', 0.06),
-            "extra_mass":
-            rospy.get_param('~extra_mass', 0.1),
         }
 
         ### publisher

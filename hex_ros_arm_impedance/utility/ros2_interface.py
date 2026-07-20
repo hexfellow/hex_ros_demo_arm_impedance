@@ -77,8 +77,14 @@ class DataInterface(InterfaceBase):
         self.__node.declare_parameter('arm_kd', [5.0, 5.0, 5.0, 5.0, 2.0, 2.0])
         self.__node.declare_parameter('grip_kp', [10.0])
         self.__node.declare_parameter('grip_kd', [0.5])
+        self.__node.declare_parameter('arm_impedance_kp',
+                                      [100.0, 100.0, 125.0, 75.0, 50.0, 50.0])
+        self.__node.declare_parameter('arm_impedance_kd',
+                                      [2.5, 2.5, 2.5, 2.5, 1.0, 1.0])
+        self.__node.declare_parameter('arm_pos_threshold', 0.1)
+        self.__node.declare_parameter('grip_impedance_kp', [10.0])
+        self.__node.declare_parameter('grip_impedance_kd', [0.5])
         self.__node.declare_parameter('arrive_threshold', 0.06)
-        self.__node.declare_parameter('extra_mass', 0.1)
 
         self._rate_param.update({
             "teleop":
@@ -92,7 +98,7 @@ class DataInterface(InterfaceBase):
             "pose_end_in_flange":
             list(self.__node.get_parameter('pose_end_in_flange').value),
         }
-        self._comp_param = {
+        self._impedance_param = {
             "gravity":
             list(self.__node.get_parameter('gravity').value),
             "arm_stable_pos":
@@ -107,10 +113,18 @@ class DataInterface(InterfaceBase):
             list(self.__node.get_parameter('grip_kp').value),
             "grip_kd":
             list(self.__node.get_parameter('grip_kd').value),
+            "arm_impedance_kp":
+            list(self.__node.get_parameter('arm_impedance_kp').value),
+            "arm_impedance_kd":
+            list(self.__node.get_parameter('arm_impedance_kd').value),
+            "arm_pos_threshold":
+            self.__node.get_parameter('arm_pos_threshold').value,
+            "grip_impedance_kp":
+            list(self.__node.get_parameter('grip_impedance_kp').value),
+            "grip_impedance_kd":
+            list(self.__node.get_parameter('grip_impedance_kd').value),
             "arrive_threshold":
             self.__node.get_parameter('arrive_threshold').value,
-            "extra_mass":
-            self.__node.get_parameter('extra_mass').value,
         }
 
         ### publisher

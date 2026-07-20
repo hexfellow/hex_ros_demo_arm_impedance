@@ -1,6 +1,6 @@
-arm_comp:
+arm_impedance:
   ros__parameters:
-    # gravity compensation work loop rate [hz]
+    # impedance control work loop rate [hz]
     rate_ros: 500.0
 
     # keyboard monitor rate [hz]
@@ -25,8 +25,12 @@ arm_comp:
     grip_kp: [10.0]
     grip_kd: [0.5]
 
+    # gains used while use impedance control
+    arm_impedance_kp: [100.0, 100.0, 125.0, 75.0, 50.0, 50.0]
+    arm_impedance_kd: [2.5, 2.5, 2.5, 2.5, 1.0, 1.0]
+    arm_pos_threshold: 0.1
+    grip_impedance_kp: [10.0]
+    grip_impedance_kd: [0.5]
+
     # max joint error [rad] to consider the stable position reached
     arrive_threshold: 0.06
-
-    # extra payload mass at the end effector to compensate [kg]
-    extra_mass: 0.1

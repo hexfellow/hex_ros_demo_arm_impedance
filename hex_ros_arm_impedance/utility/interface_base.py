@@ -21,7 +21,7 @@ class InterfaceBase(ABC):
         ### ros parameters
         self._rate_param = {}
         self._model_param = {}
-        self._comp_param = {}
+        self._impedance_param = {}
 
         ### rx msg queues
         self._manip_state_deque = deque(maxlen=100)
@@ -81,8 +81,8 @@ class InterfaceBase(ABC):
     def get_model_param(self) -> dict:
         return self._model_param
 
-    def get_comp_param(self) -> dict:
-        return self._comp_param
+    def get_impedance_param(self) -> dict:
+        return self._impedance_param
 
     ####################
     ### publishers
