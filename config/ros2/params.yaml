@@ -16,7 +16,7 @@ arm_impedance:
     gravity: [0.0, 0.0, -9.81]
 
     # stable (init / exit) joint position
-    arm_start_pos: [0.0, -1.2, 2.5, 0.37, 0.0, 0.0]
+    arm_start_pos: [0.0, 0.1, 2.54, -1.07, 0.0, 0.0]
     arm_end_pos: [0.0, -1.5, 3.0, 0.07, 0.0, 0.0]
     grip_stable_pos: [0.5]
 
@@ -27,9 +27,9 @@ arm_impedance:
     grip_kd: [0.5]
 
     # gains used while use impedance control
-    arm_impedance_kp: [100.0, 100.0, 125.0, 75.0, 50.0, 50.0]
-    arm_impedance_kd: [2.5, 2.5, 2.5, 2.5, 1.0, 1.0]
-    arm_pos_threshold: 0.1
+    arm_impedance_kp: [20.0, 20.0, 25.0, 15.0, 10.0, 10.0]
+    arm_impedance_kd: [0.5, 0.5, 0.5, 0.5, 0.2, 0.2]
+    arm_pos_threshold: 0.2
     grip_impedance_kp: [10.0]
     grip_impedance_kd: [0.5]
 
