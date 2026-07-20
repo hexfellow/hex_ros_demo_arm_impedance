@@ -153,8 +153,8 @@ class ArmImpedance:
                 eff=np.zeros(ARM_DOF),
                 kp=self.__arm_kp.copy(),
                 kd=self.__arm_kd.copy(),
-                lim_vel=np.array([10.0, 10.0, 10.0, 10.0, 10.0, 10.0]),
-                lim_acc=np.array([100.0, 100.0, 100.0, 100.0, 100.0, 100.0]),
+                lim_vel=0.1 * np.ones(ARM_DOF,dtype=np.float64),
+                lim_acc=100 * np.ones(ARM_DOF,dtype=np.float64),
             ),
             pose=self.__default_pose(),
         )
