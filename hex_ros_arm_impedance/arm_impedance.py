@@ -67,12 +67,10 @@ class ArmImpedance:
         ### control presets
         self.__arm_start_pos = np.asarray(
             self.__impedance_param["arm_start_pos"], dtype=np.float64)
-        self.__arm_end_pos = np.asarray(
-            self.__impedance_param["arm_end_pos"], dtype=np.float64)
-        arm_start_pose = self.__dyn_util.forward_kinematics(
+        self.__arm_end_pos = np.asarray(self.__impedance_param["arm_end_pos"],
+                                        dtype=np.float64)
+        self.__arm_start_pose = self.__dyn_util.forward_kinematics(
             self.__arm_start_pos)[-1]
-        self.__arm_start_se3 = part2se3(arm_start_pose[0],
-                                         arm_start_pose[1])
         self.__arm_pos_threshold = self.__impedance_param["arm_pos_threshold"]
         self.__grip_stable_pos = np.asarray(
             self.__impedance_param["grip_stable_pos"], dtype=np.float64)
@@ -140,7 +138,7 @@ class ArmImpedance:
             orientation=HexDcBaseQuaternion(x=0.0, y=0.0, z=0.0, w=1.0),
         )
 
-    def __build_stable_ctrl(self, is_start: bool=True) -> HexDcRoboManipCtrl:
+    def __build_stable_ctrl(self, is_start: bool = True) -> HexDcRoboManipCtrl:
         arm_ctrl = HexDcRoboArmCtrl(
             ctrl_mode=HexDcRoboArmCtrlMode.JNT,
             grav=HexDcBaseVector3(
@@ -149,7 +147,8 @@ class ArmImpedance:
                 z=float(self.__gravity[2]),
             ),
             jnt=HexDcBaseJntFull(
-                pos=self.__arm_start_pos.copy() if is_start else self.__arm_end_pos.copy(),
+                pos=self.__arm_start_pos.copy()
+                if is_start else self.__arm_end_pos.copy(),
                 vel=np.zeros(ARM_DOF),
                 eff=np.zeros(ARM_DOF),
                 kp=self.__arm_kp.copy(),
@@ -229,7 +228,7 @@ class ArmImpedance:
                 self.__stop_event.set()
             prev_q = curr_q
 
-    def __move_to_stable(self, phase: str, is_start: bool=True):
+    def __move_to_stable(self, phase: str, is_start: bool = True):
         self.__data_interface.logi(
             f"[arm_impedance]: move to {phase} position")
         stable_ctrl = self.__build_stable_ctrl(is_start)
@@ -265,28 +264,21 @@ class ArmImpedance:
         while self.__is_running():
             state = self.__data_interface.get_manip_state(latest=True)
             if state is not None:
-                se3_end_in_base = part2se3(
-                    np.array([
-                        state.manip_state.arm_state.pose.position.x,
-                        state.manip_state.arm_state.pose.position.y,
-                        state.manip_state.arm_state.pose.position.z
-                    ]),
-                    np.array([
-                        state.manip_state.arm_state.pose.orientation.w,
-                        state.manip_state.arm_state.pose.orientation.x,
-                        state.manip_state.arm_state.pose.orientation.y,
-                        state.manip_state.arm_state.pose.orientation.z
-                    ]),
-                )
-                se3_err = self.__arm_start_se3 - se3_end_in_base
-                max_err = np.max(np.abs(se3_err[:3]))
-                ratio = 1.0 if max_err < self.__arm_pos_threshold else self.__arm_pos_threshold / max_err
-                se3_err[:3] = se3_err[:3] * ratio
-                tar_se3 = se3_end_in_base + se3_err
+                pos = np.array([
+                    state.manip_state.arm_state.pose.position.x,
+                    state.manip_state.arm_state.pose.position.y,
+                    state.manip_state.arm_state.pose.position.z
+                ])
 
-                tar_pose = se32part(tar_se3)
+                pos_err = self.__arm_start_pose[0] - pos
+                max_err = np.max(np.abs(pos_err))
+                ratio = 1.0 if max_err < self.__arm_pos_threshold else self.__arm_pos_threshold / max_err
+                pos_err = pos_err * ratio
+                tar_pos = pos + pos_err
+
                 ik_success, tar_jnt_pos = self.__dyn_util.inverse_kinematics_analytic(
-                    tar_pose, state.manip_state.arm_state.jnt.position)
+                    (tar_pos, self.__arm_start_pose[1]),
+                    state.manip_state.arm_state.jnt.position)
                 if not ik_success:
                     tar_jnt_pos = state.manip_state.arm_state.jnt.position
                     print(f"[arm_impedance]: inverse kinematics failed")
