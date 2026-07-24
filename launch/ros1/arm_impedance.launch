@@ -6,9 +6,9 @@
 <!--#######################################-->
 
 <launch>
-    <node name="arm_impedance" pkg="hex_ros_arm_impedance" type="arm_impedance.py" output="screen">
+    <node name="arm_impedance" pkg="hex_ros_demo_arm_impedance" type="arm_impedance.py" output="screen">
         <!-- load default parameters -->
-        <rosparam file="$(find hex_ros_arm_impedance)/config/ros1/params.yaml"/>
+        <rosparam file="$(find hex_ros_demo_arm_impedance)/config/ros1/params.yaml"/>
         <!-- robot model used for dynamics -->
         <param name="model_urdf" value="$(find hex_ros_urdf_archer_y6)/urdf/gr100_comp.urdf"/>
         <!-- subscribe -->

@@ -2,7 +2,7 @@ import os
 from setuptools import setup, find_packages
 from glob import glob
 
-package_name = 'hex_ros_arm_impedance'
+package_name = 'hex_ros_demo_arm_impedance'
 
 
 def get_files(tar: str, src: str):
@@ -38,7 +38,7 @@ setup(
     license='Apache-2.0',
     entry_points={
         'console_scripts': [
-            'arm_impedance = hex_ros_arm_impedance.arm_impedance:main',
+            'arm_impedance = hex_ros_demo_arm_impedance.arm_impedance:main',
         ],
     },
 )

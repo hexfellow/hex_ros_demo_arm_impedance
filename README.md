@@ -1,4 +1,4 @@
-# hex_ros_arm_impedance
+# hex_ros_demo_arm_impedance
 
 ## What does this package do
 
@@ -88,7 +88,7 @@ Ensure the following software is installed:
 3. Clone the repository:
 
    ```shell
-   git clone https://github.com/hexfellow/hex_ros_arm_impedance.git
+   git clone https://github.com/hexfellow/hex_ros_demo_arm_impedance.git
    ```
 
 4. Navigate back and build the workspace:
@@ -137,13 +137,13 @@ Ensure the following software is installed:
    For ROS 1:
 
    ```shell
-   roslaunch hex_ros_arm_impedance arm_impedance.launch
+   roslaunch hex_ros_demo_arm_impedance arm_impedance.launch
    ```
 
    For ROS 2:
 
    ```shell
-   ros2 launch hex_ros_arm_impedance arm_impedance.launch.py
+   ros2 launch hex_ros_demo_arm_impedance arm_impedance.launch.py
    ```
 
 3. The arm moves to the stable pose and then enters impedance control. Press `q` to exit. To record data, use ROS's bag tools, e.g. `ros2 bag record -a`.

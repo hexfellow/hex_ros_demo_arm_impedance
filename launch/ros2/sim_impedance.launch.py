@@ -18,7 +18,7 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     sim_pkg_path = FindPackageShare('hex_ros_sim_archer_y6')
     keyboard_pkg_path = FindPackageShare('hex_ros_teleop_keyboard')
-    impedance_pkg_path = FindPackageShare('hex_ros_arm_impedance')
+    impedance_pkg_path = FindPackageShare('hex_ros_demo_arm_impedance')
 
     # args
     viewer_arg = DeclareLaunchArgument(
