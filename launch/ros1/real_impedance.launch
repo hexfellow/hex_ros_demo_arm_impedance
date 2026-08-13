@@ -1,0 +1,24 @@
+<!--#######################################-->
+<!-- Copyright (c) 2026  Dong Zhaorui.     -->
+<!-- All rights reserved.                  -->
+<!-- Author: Dong Zhaorui 847235539@qq.com -->
+<!-- Date  : 2026-08-13                    -->
+<!--#######################################-->
+
+<launch>
+    <arg name="robot_type" default="archer"/>
+
+    <!-- keyboard teleop -->
+    <include file="$(find hex_ros_teleop_keyboard)/launch/ros1/teleop_keyboard.launch"/>
+
+    <!-- real arm driver (archer / firefly, selectable) -->
+    <group if="$(eval arg('robot_type') == 'archer')">
+        <include file="$(find hex_ros_robot_arm)/launch/ros1/archer.launch"/>
+    </group>
+    <group unless="$(eval arg('robot_type') == 'archer')">
+        <include file="$(find hex_ros_robot_arm)/launch/ros1/firefly.launch"/>
+    </group>
+
+    <!-- impedance control node (real: no use_sim_time) -->
+    <include file="$(find hex_ros_demo_arm_impedance)/launch/ros1/arm_impedance.launch"/>
+</launch>
