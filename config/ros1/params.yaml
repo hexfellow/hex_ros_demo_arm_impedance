@@ -10,6 +10,9 @@ model_frame_id: "base_link"
 # end effector pose in flange frame [x, y, z, qw, qx, qy, qz]
 pose_end_in_flange: [0.187, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
 
+# impedance target mode: ee or jnt
+arm_impedance_mode: "ee"
+
 # gravity vector [m/s^2]
 gravity: [0.0, 0.0, -9.81]
 
@@ -28,6 +31,8 @@ grip_kd: [0.5]
 arm_impedance_kp: [20.0, 20.0, 25.0, 15.0, 10.0, 10.0]
 arm_impedance_kd: [0.5, 0.5, 0.5, 0.5, 0.2, 0.2]
 arm_pos_threshold: 0.2
+# maximum joint-space correction per cycle [rad]
+arm_jnt_threshold: 0.1
 grip_impedance_kp: [10.0]
 grip_impedance_kd: [0.5]
 

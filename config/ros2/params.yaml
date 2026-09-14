@@ -1,7 +1,7 @@
-arm_impedance:
+/**/arm_impedance:
   ros__parameters:
     # impedance control work loop rate [hz]
-    rate_ros: 500.0
+    rate_ros: 1000.0
 
     # keyboard monitor rate [hz]
     rate_teleop: 100.0
@@ -11,6 +11,9 @@ arm_impedance:
     model_frame_id: "base_link"
     # end effector pose in flange frame [x, y, z, qw, qx, qy, qz]
     pose_end_in_flange: [0.187, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+
+    # impedance target mode: ee or jnt
+    arm_impedance_mode: "jnt"
 
     # gravity vector [m/s^2]
     gravity: [0.0, 0.0, -9.81]
@@ -27,9 +30,11 @@ arm_impedance:
     grip_kd: [0.5]
 
     # gains used while use impedance control
-    arm_impedance_kp: [20.0, 20.0, 25.0, 15.0, 10.0, 10.0]
+    arm_impedance_kp: [20.0, 35.0, 35.0, 20.0, 10.0, 10.0]
     arm_impedance_kd: [0.5, 0.5, 0.5, 0.5, 0.2, 0.2]
     arm_pos_threshold: 0.2
+    # maximum joint-space correction per cycle [rad]
+    arm_jnt_threshold: 0.1
     grip_impedance_kp: [10.0]
     grip_impedance_kd: [0.5]
 
