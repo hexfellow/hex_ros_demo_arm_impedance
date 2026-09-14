@@ -25,6 +25,10 @@ def generate_launch_description():
         default_value='false',
         choices=['true', 'false'],
         description='Flag to use sim time')
+    keyboard_topic_arg = DeclareLaunchArgument(
+        name='keyboard_topic',
+        default_value='/teleop_keyboard_state',
+        description='Keyboard teleoperation topic')
 
     # arm_impedance node
     impedance_param_path = PathJoinSubstitution(
@@ -48,11 +52,12 @@ def generate_launch_description():
         remappings=[
             ('manip_state', 'manip_state'),
             ('manip_ctrl', 'manip_ctrl'),
-            ('teleop_keyboard_state', '/teleop_keyboard_state'),
+            ('teleop_keyboard_state', LaunchConfiguration('keyboard_topic')),
         ],
     )
 
     return LaunchDescription([
         use_sim_time_arg,
+        keyboard_topic_arg,
         arm_impedance_node,
     ])
