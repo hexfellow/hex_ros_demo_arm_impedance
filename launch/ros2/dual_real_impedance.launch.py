@@ -31,7 +31,6 @@ def generate_launch_description():
         description='Left robot arm type: archer or firefly')
     left_robot_host_arg = DeclareLaunchArgument(
         name='left_robot_host',
-        # default_value='192.168.1.100',
         default_value='172.18.20.80',
         description='Left robot controller IP address')
     left_robot_port_arg = DeclareLaunchArgument(
@@ -52,7 +51,6 @@ def generate_launch_description():
         description='Right robot arm type: archer or firefly')
     right_robot_host_arg = DeclareLaunchArgument(
         name='right_robot_host',
-        # default_value='192.168.1.101',
         default_value='172.18.20.80',
         description='Right robot controller IP address')
     right_robot_port_arg = DeclareLaunchArgument(
