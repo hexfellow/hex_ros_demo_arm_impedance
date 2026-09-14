@@ -11,7 +11,7 @@ model_frame_id: "base_link"
 pose_end_in_flange: [0.187, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
 
 # impedance target mode: ee or jnt
-arm_impedance_mode: "ee"
+arm_impedance_mode: "jnt"
 
 # gravity vector [m/s^2]
 gravity: [0.0, 0.0, -9.81]

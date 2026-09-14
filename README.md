@@ -64,6 +64,8 @@ Ensure the following software is installed:
 | `grip_stable_pos`             | `vector<double>` | Gripper stable position.                                |
 | `arm_kp` / `arm_kd`           | `vector<double>` | Arm gains used while moving to the stable position.     |
 | `grip_kp` / `grip_kd`         | `vector<double>` | Gripper gains used while moving to the stable position. |
+| `arm_impedance_mode`          | `string`          | Impedance target mode: `ee` or `jnt` (default: `jnt`).  |
+| `arm_jnt_threshold`           | `double`          | Maximum JNT correction per cycle [rad] (default: 0.1).|
 | `arm_impedance_kp` / `kd`     | `vector<double>` | Arm gains used during impedance control.                |
 | `grip_impedance_kp` / `kd`    | `vector<double>` | Gripper gains used during impedance control.            |
 | `arm_se3_threshold`           | `double`         | Max SE(3) error step applied per cycle.                 |
@@ -147,3 +149,27 @@ Ensure the following software is installed:
    ```
 
 3. The arm moves to the stable pose and then enters impedance control. Press `q` to exit. To record data, use ROS's bag tools, e.g. `ros2 bag record -a`.
+
+### Two real arms
+
+The `dual_real_impedance` launch starts two independent real arm drivers and two impedance nodes. The left and right arms have separate robot type, controller host, port, and gripper arguments. Their state and command topics are isolated under `/left` and `/right`, while both impedance nodes share the global `/teleop_keyboard_state` topic. The `keyboard_topic` argument can be used to select the keyboard topic; its default is `/teleop_keyboard_state`.
+
+For ROS 2:
+
+```shell
+ros2 launch hex_ros_demo_arm_impedance dual_real_impedance.launch.py \\
+  left_robot_type:=archer left_robot_host:=<left-ip> left_robot_port:=9439 \\
+  right_robot_type:=archer right_robot_host:=<right-ip> right_robot_port:=9439 \\
+  left_robot_grip_type:=empty right_robot_grip_type:=empty
+```
+
+For ROS 1:
+
+```shell
+roslaunch hex_ros_demo_arm_impedance dual_real_impedance.launch \\
+  left_robot_type:=archer left_robot_host:=<left-ip> left_robot_port:=9439 \\
+  right_robot_type:=archer right_robot_host:=<right-ip> right_robot_port:=9439 \\
+  left_robot_grip_type:=empty right_robot_grip_type:=empty
+```
+
+The resulting control paths are `/left/manip_state` → `/left/manip_ctrl` and `/right/manip_state` → `/right/manip_ctrl`. In a single-arm launch, the corresponding paths are `/manip_state` and `/manip_ctrl`. Both configurations use `/teleop_keyboard_state` by default; `keyboard_topic` can override this topic when launching `arm_impedance` from another composition. Pressing `q` causes both impedance nodes to perform their exit sequence.
