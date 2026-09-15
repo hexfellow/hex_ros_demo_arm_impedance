@@ -68,6 +68,7 @@ class DataInterface(InterfaceBase):
             'pose_end_in_flange',
             [0.187, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
         )
+        self.__node.declare_parameter('arm_impedance_mode', 'jnt')
         self.__node.declare_parameter('gravity', [0.0, 0.0, -9.81])
         self.__node.declare_parameter('arm_start_pos',
                                       [0.0, -1.5, 3.0, 0.07, 0.0, 0.0])
@@ -84,6 +85,7 @@ class DataInterface(InterfaceBase):
         self.__node.declare_parameter('arm_impedance_kd',
                                       [2.5, 2.5, 2.5, 2.5, 1.0, 1.0])
         self.__node.declare_parameter('arm_pos_threshold', 0.1)
+        self.__node.declare_parameter('arm_jnt_threshold', 0.1)
         self.__node.declare_parameter('grip_impedance_kp', [10.0])
         self.__node.declare_parameter('grip_impedance_kd', [0.5])
         self.__node.declare_parameter('arrive_threshold', 0.06)
@@ -101,6 +103,8 @@ class DataInterface(InterfaceBase):
             list(self.__node.get_parameter('pose_end_in_flange').value),
         }
         self._impedance_param = {
+            "mode":
+            self.__node.get_parameter('arm_impedance_mode').value,
             "gravity":
             list(self.__node.get_parameter('gravity').value),
             "arm_start_pos":
@@ -123,6 +127,8 @@ class DataInterface(InterfaceBase):
             list(self.__node.get_parameter('arm_impedance_kd').value),
             "arm_pos_threshold":
             self.__node.get_parameter('arm_pos_threshold').value,
+            "arm_jnt_threshold":
+            self.__node.get_parameter('arm_jnt_threshold').value,
             "grip_impedance_kp":
             list(self.__node.get_parameter('grip_impedance_kp').value),
             "grip_impedance_kd":

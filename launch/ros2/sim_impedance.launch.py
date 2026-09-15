@@ -52,7 +52,11 @@ def generate_launch_description():
     impedance_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution(
-                [impedance_pkg_path, "arm_impedance.launch.py"])), )
+                [impedance_pkg_path, "arm_impedance.launch.py"])),
+        launch_arguments={
+            'use_sim_time': 'true',
+        }.items(),
+    )
 
     return LaunchDescription([
         viewer_arg,

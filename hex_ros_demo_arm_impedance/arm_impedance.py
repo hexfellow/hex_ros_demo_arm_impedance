@@ -11,6 +11,7 @@ import sys
 import time
 import traceback
 import threading
+from typing import Optional
 
 import numpy as np
 from hex_util_ros import part2se3, se32part
@@ -71,7 +72,16 @@ class ArmImpedance:
                                         dtype=np.float64)
         self.__arm_start_pose = self.__dyn_util.forward_kinematics(
             self.__arm_start_pos)[-1]
+        self.__arm_impedance_mode = str(
+            self.__impedance_param["mode"]).lower()
+        
+        if self.__arm_impedance_mode not in ("ee", "jnt"):
+            raise ValueError(
+                "arm_impedance_mode must be either 'ee' or 'jnt', got "
+                f"'{self.__arm_impedance_mode}'")
+        
         self.__arm_pos_threshold = self.__impedance_param["arm_pos_threshold"]
+        self.__arm_jnt_threshold = self.__impedance_param["arm_jnt_threshold"]
         self.__grip_stable_pos = np.asarray(
             self.__impedance_param["grip_stable_pos"], dtype=np.float64)
         self.__arm_kp = np.asarray(self.__impedance_param["arm_kp"],
@@ -153,8 +163,8 @@ class ArmImpedance:
                 eff=np.zeros(ARM_DOF),
                 kp=self.__arm_kp.copy(),
                 kd=self.__arm_kd.copy(),
-                lim_vel=1.0 * np.ones(ARM_DOF,dtype=np.float64),
-                lim_acc=100 * np.ones(ARM_DOF,dtype=np.float64),
+                lim_vel=15.0 * np.ones(ARM_DOF,dtype=np.float64),
+                lim_acc=15 * np.ones(ARM_DOF,dtype=np.float64),
             ),
             pose=self.__default_pose(),
         )
@@ -174,8 +184,8 @@ class ArmImpedance:
 
     def __build_impedance_ctrl(
             self,
-            arm_jnt_pos: np.ndarray = None,
-            grip_jnt_pos: np.ndarray = None) -> HexDcRoboManipCtrl:
+            arm_jnt_pos: Optional[np.ndarray] = None,
+            grip_jnt_pos: Optional[np.ndarray] = None) -> HexDcRoboManipCtrl:
         arm_ctrl = HexDcRoboArmCtrl(
             ctrl_mode=HexDcRoboArmCtrlMode.MIT,
             grav=HexDcBaseVector3(
@@ -260,28 +270,41 @@ class ArmImpedance:
             traceback.print_exc()
 
     def __work_process(self):
-        self.__data_interface.logi("[arm_impedance]: start impedance control")
+        self.__data_interface.logi(
+            "[arm_impedance]: start impedance control in "
+            f"{self.__arm_impedance_mode} mode")
         while self.__is_running():
             state = self.__data_interface.get_manip_state(latest=True)
             if state is not None:
-                pos = np.array([
-                    state.manip_state.arm_state.pose.position.x,
-                    state.manip_state.arm_state.pose.position.y,
-                    state.manip_state.arm_state.pose.position.z
-                ])
+                if self.__arm_impedance_mode == "ee":
+                    pos = np.array([
+                        state.manip_state.arm_state.pose.position.x,
+                        state.manip_state.arm_state.pose.position.y,
+                        state.manip_state.arm_state.pose.position.z
+                    ])
+                    pos_err = self.__arm_start_pose[0] - pos
+                    max_err = np.max(np.abs(pos_err))
+                    ratio = 1.0 if max_err < self.__arm_pos_threshold else self.__arm_pos_threshold / max_err
+                    pos_err = pos_err * ratio
+                    tar_pos = pos + pos_err
 
-                pos_err = self.__arm_start_pose[0] - pos
-                max_err = np.max(np.abs(pos_err))
-                ratio = 1.0 if max_err < self.__arm_pos_threshold else self.__arm_pos_threshold / max_err
-                pos_err = pos_err * ratio
-                tar_pos = pos + pos_err
+                    ik_success, tar_jnt_pos = self.__dyn_util.inverse_kinematics_analytic(
+                        (tar_pos, self.__arm_start_pose[1]),
+                        state.manip_state.arm_state.jnt.position)
 
-                ik_success, tar_jnt_pos = self.__dyn_util.inverse_kinematics_analytic(
-                    (tar_pos, self.__arm_start_pose[1]),
-                    state.manip_state.arm_state.jnt.position)
-                if not ik_success:
-                    tar_jnt_pos = state.manip_state.arm_state.jnt.position
-                    print(f"[arm_impedance]: inverse kinematics failed")
+                    if not ik_success:
+                        tar_jnt_pos = state.manip_state.arm_state.jnt.position
+                        print(f"[arm_impedance]: inverse kinematics failed")
+                else:
+                    current_jnt_pos = np.asarray(
+                        state.manip_state.arm_state.jnt.position,
+                        dtype=np.float64,
+                    )
+                    jnt_err = self.__arm_start_pos - current_jnt_pos
+                    max_err = np.max(np.abs(jnt_err))
+                    ratio = 1.0 if max_err < self.__arm_jnt_threshold else self.__arm_jnt_threshold / max_err
+                    tar_jnt_pos = current_jnt_pos + jnt_err * ratio
+
                 self.__data_interface.pub_manip_ctrl(
                     self.__build_impedance_ctrl(tar_jnt_pos))
             self.__data_interface.sleep()

@@ -6,6 +6,8 @@
 <!--#######################################-->
 
 <launch>
+    <arg name="keyboard_topic" default="/teleop_keyboard_state"/>
+
     <node name="arm_impedance" pkg="hex_ros_demo_arm_impedance" type="arm_impedance.py" output="screen">
         <!-- load default parameters -->
         <rosparam file="$(find hex_ros_demo_arm_impedance)/config/ros1/params.yaml"/>
@@ -13,7 +15,7 @@
         <param name="model_urdf" value="$(find hex_ros_urdf_archer_y6)/urdf/gr100_comp.urdf"/>
         <!-- subscribe -->
         <remap from="manip_state" to="manip_state"/>
-        <remap from="teleop_keyboard_state" to="teleop_keyboard_state"/>
+        <remap from="teleop_keyboard_state" to="$(arg keyboard_topic)"/>
         <!-- publish -->
         <remap from="manip_ctrl" to="manip_ctrl"/>
     </node>

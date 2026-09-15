@@ -1,0 +1,66 @@
+<!--#######################################-->
+<!-- Copyright (c) 2026  Dong Zhaorui.     -->
+<!-- All rights reserved.                  -->
+<!-- Author: Dong Zhaorui 847235539@qq.com -->
+<!-- Date  : 2026-08-13                    -->
+<!--#######################################-->
+
+<launch>
+    <arg name="left_robot_type" default="archer"/>
+    <arg name="left_robot_host" default="192.168.1.100"/>
+    <arg name="left_robot_port" default="8439"/>
+    <arg name="left_robot_grip_type" default="empty"/>
+    <arg name="right_robot_type" default="archer"/>
+    <arg name="right_robot_host" default="192.168.1.101"/>
+    <arg name="right_robot_port" default="8439"/>
+    <arg name="right_robot_grip_type" default="empty"/>
+
+    <!-- Left real robot driver -->
+    <group ns="left">
+        <group if="$(eval arg('left_robot_type') == 'archer')">
+            <include file="$(find hex_ros_robot_arm)/launch/ros1/archer.launch">
+                <arg name="robot_host" value="$(arg left_robot_host)"/>
+                <arg name="robot_port" value="$(arg left_robot_port)"/>
+                <arg name="robot_grip_type" value="$(arg left_robot_grip_type)"/>
+                <arg name="test" value="false"/>
+            </include>
+        </group>
+        <group unless="$(eval arg('left_robot_type') == 'archer')">
+            <include file="$(find hex_ros_robot_arm)/launch/ros1/firefly.launch">
+                <arg name="robot_host" value="$(arg left_robot_host)"/>
+                <arg name="robot_port" value="$(arg left_robot_port)"/>
+                <arg name="robot_grip_type" value="$(arg left_robot_grip_type)"/>
+                <arg name="test" value="false"/>
+            </include>
+        </group>
+        <include file="$(find hex_ros_demo_arm_impedance)/launch/ros1/arm_impedance.launch">
+            <arg name="keyboard_topic" value="/teleop_keyboard_state"/>
+        </include>
+    </group>
+
+    <!-- Right real robot driver -->
+    <group ns="right">
+        <group if="$(eval arg('right_robot_type') == 'archer')">
+            <include file="$(find hex_ros_robot_arm)/launch/ros1/archer.launch">
+                <arg name="robot_host" value="$(arg right_robot_host)"/>
+                <arg name="robot_port" value="$(arg right_robot_port)"/>
+                <arg name="robot_grip_type" value="$(arg right_robot_grip_type)"/>
+                <arg name="test" value="false"/>
+            </include>
+        </group>
+        <group unless="$(eval arg('right_robot_type') == 'archer')">
+            <include file="$(find hex_ros_robot_arm)/launch/ros1/firefly.launch">
+                <arg name="robot_host" value="$(arg right_robot_host)"/>
+                <arg name="robot_port" value="$(arg right_robot_port)"/>
+                <arg name="robot_grip_type" value="$(arg right_robot_grip_type)"/>
+                <arg name="test" value="false"/>
+            </include>
+        </group>
+        <include file="$(find hex_ros_demo_arm_impedance)/launch/ros1/arm_impedance.launch">
+            <arg name="keyboard_topic" value="/teleop_keyboard_state"/>
+        </include>
+    </group>
+
+    <!-- One keyboard source shared by both impedance nodes -->
+    <include file="$(find hex_ros_teleop_keyboard)/launch/ros1/teleop_keyboard.launch"/>
+</launch>

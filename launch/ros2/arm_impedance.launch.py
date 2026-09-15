@@ -7,6 +7,8 @@
 ################################################################
 
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -16,6 +18,17 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     impedance_pkg_path = FindPackageShare('hex_ros_demo_arm_impedance')
     urdf_pkg_path = FindPackageShare('hex_ros_urdf_archer_y6')
+
+    # args
+    use_sim_time_arg = DeclareLaunchArgument(
+        name='use_sim_time',
+        default_value='false',
+        choices=['true', 'false'],
+        description='Flag to use sim time')
+    keyboard_topic_arg = DeclareLaunchArgument(
+        name='keyboard_topic',
+        default_value='/teleop_keyboard_state',
+        description='Keyboard teleoperation topic')
 
     # arm_impedance node
     impedance_param_path = PathJoinSubstitution(
@@ -33,16 +46,18 @@ def generate_launch_description():
             impedance_param_path,
             {
                 "model_urdf": ParameterValue(urdf_file_path, value_type=str),
-                "use_sim_time": True,
+                "use_sim_time": LaunchConfiguration('use_sim_time'),
             },
         ],
         remappings=[
             ('manip_state', 'manip_state'),
             ('manip_ctrl', 'manip_ctrl'),
-            ('teleop_keyboard_state', 'teleop_keyboard_state'),
+            ('teleop_keyboard_state', LaunchConfiguration('keyboard_topic')),
         ],
     )
 
     return LaunchDescription([
+        use_sim_time_arg,
+        keyboard_topic_arg,
         arm_impedance_node,
     ])
