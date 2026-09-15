@@ -150,7 +150,7 @@ Ensure the following software is installed:
 
 3. The arm moves to the stable pose and then enters impedance control. Press `q` to exit. To record data, use ROS's bag tools, e.g. `ros2 bag record -a`.
 
-### Two real arms
+### Dual real arms
 
 The `dual_real_impedance` launch starts two independent real arm drivers and two impedance nodes. The left and right arms have separate robot type, controller host, port, and gripper arguments. Their state and command topics are isolated under `/left` and `/right`, while both impedance nodes share the global `/teleop_keyboard_state` topic. The `keyboard_topic` argument can be used to select the keyboard topic; its default is `/teleop_keyboard_state`.
 
